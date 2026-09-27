@@ -1,0 +1,117 @@
+EasyDownload — WinUI 3 真·原生版
+=====================================
+
+这是真正的 WinUI 3（Windows App SDK / WinUI）版本，不再是"仿 WinUI 风格的 WPF"。
+控件、圆角、Fluent 图标、Mica 云母、深浅主题全部是 WinUI 原生实现。
+
+
+一、你这台机器能不能编
+-------------------------------------
+可以。ASUS Vivobook S 16 + 原版 Windows 11 + VS 2026，条件都够。
+
+只需要确认 VS 2026 装了这一项工作负载：
+    「Windows 应用程序开发 / Windows application development」
+    （里面包含 Windows App SDK + WinUI 3 模板 + .NET SDK）
+
+装法：Visual Studio Installer → 修改 → 勾选「Windows 应用程序开发」→ 安装。
+
+
+二、怎么编
+-------------------------------------
+1. 把整个 EasyDownload 文件夹解压到【全新的空文件夹】
+   （不要覆盖任何旧目录，bin / obj 是反复出怪错的根源）
+
+2. 双击 EasyDownload.csproj
+
+3. 等 NuGet 还原（右下角或输出窗口出现"正在还原 NuGet 包"）
+   只需要两个包：
+       Microsoft.WindowsAppSDK 2.4.0      （WinUI 3 + WebView2）
+       System.Text.Encoding.CodePages 8.0.0 （GB18030 中文文件名解码）
+
+4. 顶部平台选 x64
+
+5. Ctrl + Shift + B 重新生成 → 应该 0 错误
+
+6. F5 运行
+
+
+三、如果 NuGet 报版本找不到（NU1102）
+-------------------------------------
+打开：工具 → NuGet 包管理器 → 管理解决方案的 NuGet 包
+搜索 Microsoft.WindowsAppSDK → 选列表里最新的【稳定版】→ 安装
+（版本号是不断更新的，我写死的 2.4.0 若已下线就用最新的）
+
+
+四、如果报 SDK 找不到（NETSDK1045 / TargetFramework 不支持）
+-------------------------------------
+把 EasyDownload.csproj 里这一行：
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+改成（二选一，看你 VS 装了哪个）：
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    或
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+
+
+五、为什么这版不会再弹"是否安装 WindowsAppRuntime"
+-------------------------------------
+csproj 里已设：
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+Windows App SDK 运行时会直接打进输出目录，exe 双击就能跑，
+不依赖系统装没装 WindowsAppRuntime，也不会弹那个框。
+
+
+六、这版跟之前的 WPF 版有什么区别
+-------------------------------------
+本版是 WinUI 3 原生，不是"仿"：
+
+  · NavigationView   —— WinUI 官方侧边导航控件
+  · TabView          —— WinUI 官方多标签控件
+  · ToggleSwitch     —— WinUI 官方拨动开关（不再是仿制 CheckBox）
+  · ProgressBar      —— WinUI 官方圆角进度条
+  · ContentDialog    —— WinUI 官方对话框（WinUI 没有 MessageBox）
+  · MicaBackdrop     —— Win11 云母材质背景
+  · 自定义标题栏      —— ExtendsContentIntoTitleBar + SetTitleBar
+  · {ThemeResource}  —— 深浅主题靠系统主题资源切换，不用手动换资源字典
+  · WebView2         —— WinUI 3 自带，不需要额外装 NuGet 包
+
+下载引擎（32 线程 / 断点续传 / 定点写入 / 文件名识别）原样保留，一行没改。
+
+
+七、功能清单
+-------------------------------------
+首页   多标签浏览器（后退 / 前进 / 刷新 / 地址栏）
+       网页里点下载 → 自动交给自家下载引擎接管
+下载   32 线程、断点续传、分块自动重试
+       实时速度 / 进度 / 百分比 / 剩余时间
+       开始 / 暂停 / 改名 / 打开 / 删除
+       长文件名自动省略，不会把按钮挤走
+设置   浅色 / 深色主题切换
+       线程数 1-32、同时下载数 1-8
+       自动限速、断点续传、下载前先问我
+       下载目录（浏览 / 打开）
+       保存设置（写到 AppData，下次启动还在）
+引导   首次运行 4 步向导，完成后不再显示
+
+
+八、发布成安装包
+-------------------------------------
+1. 顶部切 Release
+2. 右键项目 → 发布 → 文件夹 → 位置填 C:\EasyDownloadBuild\publish
+3. 点"显示所有设置"，改这四项：
+       配置：Release
+       目标运行时：win-x64
+       部署模式：独立
+       生成单个文件：不要勾
+4. 点发布
+5. 用 Inno Setup 把 publish 目录压成 Setup.exe
+
+注意：本版是 unpackaged（非 MSIX），输出是普通 exe，
+Inno Setup 打包方式和之前完全一样，不用改脚本。
+
+
+九、已知限制
+-------------------------------------
+· 仅支持 HTTP / HTTPS 直链，不支持 BT / 磁力 / P2P
+· 关闭程序后下载任务列表暂不保留
+· 界面仅简体中文
+· 不支持 Windows 7 / 8.1
